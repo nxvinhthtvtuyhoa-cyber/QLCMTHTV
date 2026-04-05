@@ -1,236 +1,306 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ban giám hiệu - Hệ thống Chuyên môn Số</title>
-    <!-- Tailwind CSS & Lucide Icons -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        
-        :root {
-            --bg-main: #fcfdfe;
-        }
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { 
+  CloudUpload, 
+  ChevronLeft, 
+  CheckCircle2, 
+  FileText, 
+  BookOpen, 
+  UserCircle, 
+  Home,
+  Bell,
+  Menu,
+  Send,
+  Loader2,
+  School
+} from 'lucide-react';
 
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: var(--bg-main);
-            -webkit-tap-highlight-color: transparent;
-        }
+// --- CẤU HÌNH FIREBASE ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'viv08-tv-2026';
 
-        .glass-nav {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border-bottom: 1px solid rgba(231, 235, 241, 0.7);
-        }
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [view, setView] = useState('home'); // home, upload_khbd, upload_tulieu, upload_hoso
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-        .feature-card {
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border: 1px solid rgba(226, 232, 240, 0.5);
-        }
+  // Form states
+  const [formData, setFormData] = useState({
+    teacherName: '',
+    department: 'Tổ 1',
+    grade: 'Lớp 1',
+    fileTitle: '',
+    note: ''
+  });
 
-        .feature-card:active {
-            transform: scale(0.94);
-        }
+  useEffect(() => {
+    const initAuth = async () => {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInAnonymously(auth);
+      } else {
+        await signInAnonymously(auth);
+      }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
 
-        .icon-box {
-            position: relative;
-            overflow: hidden;
-        }
+  const handleBack = () => {
+    setView('home');
+    setSuccess(false);
+  };
 
-        .icon-box::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: currentColor;
-            opacity: 0.12;
-            border-radius: inherit;
-        }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) return;
+    setLoading(true);
 
-        .section-title-line {
-            height: 4px;
-            width: 24px;
-            background: #2563eb;
-            border-radius: 10px;
-        }
+    try {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'submissions'), {
+        ...formData,
+        type: view,
+        userId: user.uid,
+        timestamp: serverTimestamp()
+      });
+      setSuccess(true);
+    } catch (error) {
+      console.error("Lỗi khi nộp:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 0px; }
-    </style>
-</head>
-<body class="antialiased text-slate-900">
+  const FeatureCard = ({ icon: Icon, title, desc, color, targetView }) => (
+    <button 
+      onClick={() => setView(targetView)}
+      className="w-full bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 flex flex-col items-start gap-4 active:scale-95 transition-all text-left"
+    >
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${color} bg-opacity-10 text-${color.split('-')[1]}-600`}>
+        <Icon size={24} />
+      </div>
+      <div>
+        <h3 className="font-bold text-slate-800 text-lg">{title}</h3>
+        <p className="text-xs text-slate-400 font-medium mt-1">{desc}</p>
+      </div>
+    </button>
+  );
 
-    <!-- Top Navigation Bar -->
-    <nav class="glass-nav sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <div class="w-11 h-11 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-200">
-                <i data-lucide="school" width="24" height="24"></i>
-            </div>
-            <div>
-                <h1 class="text-xl font-extrabold tracking-tight text-slate-900 leading-none">Quản lý chuyên môn</h1>
-                <p class="text-[9px] font-black text-blue-600/60 uppercase tracking-[0.2em] mt-1">Tiểu học Trưng Vương • Đắk Lắk</p>
-            </div>
+  if (!user) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="animate-spin text-blue-600" size={40} />
+        <p className="text-slate-500 font-medium animate-pulse">Khởi tạo viv08...</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-blue-100">
+      {/* Navigation Bar */}
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-bottom border-slate-100 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+            <School size={20} />
+          </div>
+          <div>
+            <h1 className="text-lg font-extrabold tracking-tight">viv08</h1>
+            <p className="text-[8px] font-black text-blue-600 uppercase tracking-widest leading-none mt-0.5">Trưng Vương • 2026</p>
+          </div>
         </div>
-        <button class="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
-            <i data-lucide="bell" width="20" height="20"></i>
-        </button>
-    </nav>
-
-    <main class="max-w-xl mx-auto p-6 space-y-12">
-        
-        <!-- Welcome Banner -->
-        <section class="relative bg-slate-900 rounded-[35px] p-8 overflow-hidden shadow-2xl">
-            <div class="relative z-10">
-                <span class="text-blue-400 text-[10px] font-bold uppercase tracking-widest">Nghiệp vụ 2026</span>
-                <h2 class="text-white text-2xl font-bold mt-2 leading-tight">Chào buổi sáng,<br/>Thầy/Cô giáo</h2>
-                <div class="mt-6 flex items-center gap-4">
-                    <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 text-white text-[11px] font-semibold">
-                        📍 Phường Tuy Hòa
-                    </div>
-                </div>
-            </div>
-            <!-- Decorative circles -->
-            <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-blue-600 rounded-full blur-[60px] opacity-40"></div>
-            <div class="absolute -left-10 -top-10 w-32 h-32 bg-indigo-500 rounded-full blur-[50px] opacity-20"></div>
-        </section>
-
-        <!-- Section 1: Nghiệp vụ Chuyên môn -->
-        <section class="space-y-6">
-            <div class="flex items-center justify-between px-1">
-                <div class="flex items-center gap-3">
-                    <div class="section-title-line"></div>
-                    <h2 class="text-[12px] font-black uppercase tracking-[0.15em] text-slate-400">Nghiệp vụ Chuyên môn</h2>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-5">
-                <!-- Nộp KHBD -->
-                <a href="https://sites.google.com/view/chuyenmonthtv/nopkhbd" class="feature-card bg-white p-6 rounded-[35px] shadow-sm flex flex-col gap-5 group">
-                    <div class="icon-box text-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center">
-                        <i data-lucide="cloud-upload" width="24" height="24"></i>
-                    </div>
-                    <div>
-                        <p class="text-[14px] font-bold text-slate-800 leading-tight">Nộp KHBD</p>
-                        <p class="text-[10px] text-slate-400 mt-1 font-medium">Cập nhật hồ sơ số</p>
-                    </div>
-                </a>
-
-                <!-- Phê duyệt xanh -->
-                <a href="https://sites.google.com/view/chuyenmonthtv/pheduyet" class="feature-card bg-white p-6 rounded-[35px] shadow-sm flex flex-col gap-5 group">
-                    <div class="icon-box text-emerald-600 w-12 h-12 rounded-2xl flex items-center justify-center">
-                        <i data-lucide="check-circle-2" width="24" height="24"></i>
-                    </div>
-                    <div>
-                        <p class="text-[14px] font-bold text-slate-800 leading-tight">Phê duyệt</p>
-                        <p class="text-[10px] text-slate-400 mt-1 font-medium">Trạng thái hồ sơ</p>
-                    </div>
-                </a>
-
-                <!-- Kho bồi dưỡng -->
-                <a href="https://sites.google.com/view/chuyenmonthtv/khoboiduong" class="feature-card bg-white p-6 rounded-[35px] shadow-sm flex flex-col gap-5 group">
-                    <div class="icon-box text-orange-500 w-12 h-12 rounded-2xl flex items-center justify-center">
-                        <i data-lucide="briefcase" width="24" height="24"></i>
-                    </div>
-                    <div>
-                        <p class="text-[14px] font-bold text-slate-800 leading-tight">Bồi dưỡng</p>
-                        <p class="text-[10px] text-slate-400 mt-1 font-medium">Nâng cao nghiệp vụ</p>
-                    </div>
-                </a>
-
-                <!-- Quản lý KPI -->
-                <a href="https://sites.google.com/view/chuyenmonthtv/quanlykp" class="feature-card bg-white p-6 rounded-[35px] shadow-sm flex flex-col gap-5 group">
-                    <div class="icon-box text-purple-600 w-12 h-12 rounded-2xl flex items-center justify-center">
-                        <i data-lucide="pie-chart" width="24" height="24"></i>
-                    </div>
-                    <div>
-                        <p class="text-[14px] font-bold text-slate-800 leading-tight">Quản lý KPI</p>
-                        <p class="text-[10px] text-slate-400 mt-1 font-medium">Đánh giá hiệu quả</p>
-                    </div>
-                </a>
-            </div>
-        </section>
-
-        <!-- Section 2: Thư viện số -->
-        <section class="space-y-6">
-            <div class="flex items-center gap-3 px-1">
-                <div class="section-title-line bg-indigo-500"></div>
-                <h2 class="text-[12px] font-black uppercase tracking-[0.15em] text-slate-400">Thư viện số</h2>
-            </div>
-            <div class="grid grid-cols-2 gap-5">
-                <a href="https://sites.google.com/view/chuyenmonthtv/trochoi" class="feature-card bg-white p-6 rounded-[35px] shadow-sm flex flex-col gap-5 group">
-                    <div class="icon-box text-indigo-600 w-12 h-12 rounded-2xl flex items-center justify-center">
-                        <i data-lucide="puzzle" width="24" height="24"></i>
-                    </div>
-                    <p class="text-[14px] font-bold text-slate-800 leading-tight">Trò chơi học tập</p>
-                </a>
-                <a href="https://sites.google.com/view/chuyenmonthtv/flashcard" class="feature-card bg-white p-6 rounded-[35px] shadow-sm flex flex-col gap-5 group">
-                    <div class="icon-box text-sky-500 w-12 h-12 rounded-2xl flex items-center justify-center">
-                        <i data-lucide="book-open" width="24" height="24"></i>
-                    </div>
-                    <p class="text-[14px] font-bold text-slate-800 leading-tight">Học liệu số</p>
-                </a>
-            </div>
-        </section>
-
-        <!-- Section 3: Hệ thống nội bộ -->
-        <section class="space-y-6">
-            <div class="flex items-center gap-3 px-1">
-                <div class="section-title-line bg-rose-500"></div>
-                <h2 class="text-[12px] font-black uppercase tracking-[0.15em] text-slate-400">Hệ thống nội bộ</h2>
-            </div>
-            <div class="space-y-4">
-                <a href="https://drive.google.com/drive/folders/1IPwHp-9h767yU0WGdnSTJUoy7bZxcEJ3" class="feature-card bg-white p-5 rounded-[30px] shadow-sm flex items-center justify-between group">
-                    <div class="flex items-center gap-4">
-                        <div class="icon-box text-rose-600 w-12 h-12 rounded-2xl flex items-center justify-center">
-                            <i data-lucide="database" width="22" height="22"></i>
-                        </div>
-                        <div>
-                            <p class="text-[15px] font-extrabold text-slate-800">Kho Hồ sơ lưu trữ</p>
-                            <p class="text-[10px] text-slate-400 font-medium">Đồng bộ Google Drive</p>
-                        </div>
-                    </div>
-                    <div class="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 group-hover:text-rose-600 transition-colors">
-                        <i data-lucide="arrow-right" width="18"></i>
-                    </div>
-                </a>
-
-                <a href="https://docs.google.com/spreadsheets/d/1ifmIOG0ElzI4xrGT1PKU8VF17FqpZ887xYhBweNhPlk/edit" class="feature-card bg-white p-5 rounded-[30px] shadow-sm flex items-center justify-between group">
-                    <div class="flex items-center gap-4">
-                        <div class="icon-box text-amber-500 w-12 h-12 rounded-2xl flex items-center justify-center">
-                            <i data-lucide="user-check" width="22" height="22"></i>
-                        </div>
-                        <div>
-                            <p class="text-[15px] font-extrabold text-slate-800">CBQL Phê duyệt</p>
-                            <p class="text-[10px] text-slate-400 font-medium">Bảng theo dõi tiến độ</p>
-                        </div>
-                    </div>
-                    <div class="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 group-hover:text-amber-500 transition-colors">
-                        <i data-lucide="arrow-right" width="18"></i>
-                    </div>
-                </a>
-            </div>
-        </section>
-
-    </main>
-
-    <footer class="text-center py-16 px-10">
-        <div class="max-w-xs mx-auto space-y-4">
-            <div class="flex justify-center gap-1">
-                <div class="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
-                <div class="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
-                <div class="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
-            </div>
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">viv08 Platform</p>
-            <p class="text-[10px] text-slate-300 font-medium leading-relaxed uppercase">Vận hành theo tiêu chuẩn Phòng VHXH Đắk Lắk 2026</p>
+        <div className="flex items-center gap-2">
+          <button className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
+            <Bell size={18} />
+          </button>
         </div>
-    </footer>
+      </nav>
 
-    <script>
-        // Khởi tạo icons
-        lucide.createIcons();
-    </script>
-</body>
-</html>
+      {view === 'home' ? (
+        <main className="max-w-md mx-auto p-6 space-y-8 pb-24">
+          {/* Welcome Section */}
+          <div className="bg-slate-900 rounded-[35px] p-8 text-white relative overflow-hidden shadow-2xl shadow-blue-100">
+            <div className="relative z-10">
+              <span className="text-blue-400 text-[10px] font-bold uppercase tracking-[0.2em]">Hệ thống nghiệp vụ số</span>
+              <h2 className="text-2xl font-bold mt-2">Kính chào,<br/>Thầy/Cô giáo</h2>
+              <div className="mt-6 flex items-center gap-2">
+                <div className="px-3 py-1 bg-white/10 rounded-full text-[10px] font-semibold border border-white/10 backdrop-blur-md">
+                  TH Trưng Vương
+                </div>
+                <div className="px-3 py-1 bg-white/10 rounded-full text-[10px] font-semibold border border-white/10 backdrop-blur-md">
+                  Đắk Lắk
+                </div>
+              </div>
+            </div>
+            <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-blue-600 rounded-full blur-3xl opacity-40"></div>
+          </div>
+
+          {/* Main Grid */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-3 px-1">
+              <div className="w-6 h-1 bg-blue-600 rounded-full"></div>
+              <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Hồ sơ chuyên môn</h3>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              <FeatureCard 
+                icon={FileText} 
+                title="Kế hoạch bài dạy" 
+                desc="Nộp giáo án, kế hoạch dạy học tuần/tháng"
+                color="bg-blue-500"
+                targetView="upload_khbd"
+              />
+              <FeatureCard 
+                icon={BookOpen} 
+                title="Tư liệu dạy học" 
+                desc="Phiếu bài tập, video, tranh ảnh minh họa"
+                color="bg-emerald-500"
+                targetView="upload_tulieu"
+              />
+              <FeatureCard 
+                icon={UserCircle} 
+                title="Hồ sơ cá nhân" 
+                desc="Bằng cấp, chứng chỉ, minh chứng thi đua"
+                color="bg-purple-500"
+                targetView="upload_hoso"
+              />
+            </div>
+          </section>
+        </main>
+      ) : (
+        /* Form View */
+        <main className="max-w-md mx-auto p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <button onClick={handleBack} className="flex items-center gap-2 text-slate-400 mb-6 font-bold text-sm">
+            <ChevronLeft size={20} /> Quay lại trang chủ
+          </button>
+
+          {success ? (
+            <div className="bg-white rounded-[40px] p-10 text-center shadow-xl border border-slate-50">
+              <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 size={40} />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">Nộp thành công!</h2>
+              <p className="text-slate-500 text-sm mb-8 leading-relaxed">Thông tin của Thầy/Cô đã được ghi nhận vào hệ thống lưu trữ của Trường Trưng Vương.</p>
+              <button 
+                onClick={handleBack}
+                className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold active:scale-95 transition-transform"
+              >
+                Tiếp tục nộp hồ sơ khác
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="bg-white rounded-[40px] p-8 shadow-sm border border-slate-50 space-y-6">
+              <div className="text-center mb-4">
+                <h2 className="text-xl font-black text-slate-800">
+                  {view === 'upload_khbd' ? 'Nộp Kế hoạch bài dạy' : 
+                   view === 'upload_tulieu' ? 'Nộp Tư liệu dạy học' : 'Cập nhật Hồ sơ cá nhân'}
+                </h2>
+                <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-bold">Phiếu điện tử 2026</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Họ và tên Giáo viên</label>
+                  <input 
+                    required
+                    type="text" 
+                    placeholder="Nhập tên để tìm kiếm..."
+                    className="w-full mt-1 px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 transition-all outline-none font-bold"
+                    value={formData.teacherName}
+                    onChange={(e) => setFormData({...formData, teacherName: e.target.value})}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Tổ chuyên môn</label>
+                    <select 
+                      className="w-full mt-1 px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none"
+                      value={formData.department}
+                      onChange={(e) => setFormData({...formData, department: e.target.value})}
+                    >
+                      <option>Tổ 1</option>
+                      <option>Tổ 2</option>
+                      <option>Tổ 3</option>
+                      <option>Tổ 4</option>
+                      <option>Tổ 5</option>
+                      <option>Tổ Văn phòng</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Khối lớp</label>
+                    <select 
+                      className="w-full mt-1 px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none"
+                      value={formData.grade}
+                      onChange={(e) => setFormData({...formData, grade: e.target.value})}
+                    >
+                      <option>Khối 1</option>
+                      <option>Khối 2</option>
+                      <option>Khối 3</option>
+                      <option>Khối 4</option>
+                      <option>Khối 5</option>
+                      <option>Đặc thù</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Tên bài dạy / Chủ đề</label>
+                  <input 
+                    required
+                    type="text" 
+                    placeholder="Ví dụ: Toán tiết 20..."
+                    className="w-full mt-1 px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 transition-all outline-none font-bold"
+                    value={formData.fileTitle}
+                    onChange={(e) => setFormData({...formData, fileTitle: e.target.value})}
+                  />
+                </div>
+
+                <div className="p-8 border-2 border-dashed border-slate-100 rounded-[30px] flex flex-col items-center justify-center gap-3 hover:bg-blue-50/50 hover:border-blue-200 transition-all cursor-pointer">
+                  <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center">
+                    <CloudUpload size={24} />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-bold text-slate-700">Bấm để chọn tệp</p>
+                    <p className="text-[10px] text-slate-400 mt-1 uppercase font-medium">Hỗ trợ PDF, DOCX, ZIP</p>
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                disabled={loading}
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-200 transition-all active:scale-95"
+              >
+                {loading ? <Loader2 className="animate-spin" size={20} /> : <Send size={18} />}
+                {loading ? 'Đang gửi hồ sơ...' : 'NỘP HỒ SƠ NGAY'}
+              </button>
+            </form>
+          )}
+        </main>
+      )}
+
+      {/* Bottom Floating Navigation */}
+      <div className="fixed bottom-6 inset-x-6 z-40 max-w-sm mx-auto">
+        <div className="bg-white/90 backdrop-blur-2xl rounded-[28px] border border-slate-100 shadow-2xl p-2 flex justify-around items-center">
+          <button 
+            onClick={() => setView('home')}
+            className={`flex flex-col items-center gap-1 p-3 rounded-2xl transition-all ${view === 'home' ? 'text-blue-600 bg-blue-50' : 'text-slate-300'}`}
+          >
+            <Home size={20} />
+            <span className="text-[9px] font-black uppercase tracking-tighter">Trang chủ</span>
+          </button>
+          <div className="w-px h-6 bg-slate-100"></div>
+          <button className="flex flex-col items-center gap-1 p-3 rounded-2xl text-slate-300">
+            <Menu size={20} />
+            <span className="text-[9px] font-black uppercase tracking-tighter">Tiện ích</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
