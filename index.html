@@ -1,159 +1,236 @@
-import React, { useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { 
-  CloudUpload, 
-  CheckCircle2, 
-  Briefcase, 
-  PieChart, 
-  Puzzle, 
-  BookOpen, 
-  Database, 
-  UserCheck, 
-  ChevronRight,
-  School,
-  LayoutGrid,
-  ExternalLink
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>viv08 - Hệ thống Chuyên môn Số</title>
+    <!-- Tailwind CSS & Lucide Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        
+        :root {
+            --bg-main: #fcfdfe;
+        }
 
-// --- CẤU HÌNH FIREBASE ---
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: var(--bg-main);
+            -webkit-tap-highlight-color: transparent;
+        }
 
-export default function App() {
-  const [user, setUser] = useState(null);
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid rgba(231, 235, 241, 0.7);
+        }
 
-  useEffect(() => {
-    const initAuth = async () => {
-      await signInAnonymously(auth);
-    };
-    initAuth();
-    const unsubscribe = onAuthStateChanged(auth, setUser);
-    return () => unsubscribe();
-  }, []);
+        .feature-card {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
 
-  // Cấu trúc dữ liệu theo yêu cầu của bạn
-  const sections = [
-    {
-      title: "Nghiệp vụ Chuyên môn",
-      items: [
-        { label: "Nộp KHBD", icon: <CloudUpload size={20} />, color: "bg-blue-600", url: "#" },
-        { label: "Phê duyệt xanh", icon: <CheckCircle2 size={20} />, color: "bg-green-600", url: "#" },
-        { label: "Kho bồi dưỡng", icon: <Briefcase size={20} />, color: "bg-orange-500", url: "#" },
-        { label: "Quản lý KPI", icon: <PieChart size={20} />, color: "bg-purple-600", url: "#" },
-      ]
-    },
-    {
-      title: "Thư viện số",
-      items: [
-        { label: "Trò chơi học tập", icon: <Puzzle size={20} />, color: "bg-blue-500", url: "#" },
-        { label: "Học liệu số", icon: <BookOpen size={20} />, color: "bg-sky-500", url: "#" },
-      ]
-    },
-    {
-      title: "Hệ thống nội bộ",
-      items: [
-        { label: "Hồ sơ lưu trữ", icon: <Database size={20} />, color: "bg-red-600", url: "#" },
-        { label: "CBQL Duyệt", icon: <UserCheck size={20} />, color: "bg-rose-600", url: "#" },
-      ]
-    }
-  ];
+        .feature-card:active {
+            transform: scale(0.94);
+        }
 
-  if (!user) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="animate-spin mb-4 inline-block text-blue-600">
-             <LayoutGrid size={40} />
-          </div>
-          <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Khởi tạo viv08...</p>
-        </div>
-      </div>
-    );
-  }
+        .icon-box {
+            position: relative;
+            overflow: hidden;
+        }
 
-  return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 pb-10">
-      {/* Header Chuyên nghiệp */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-700 text-white p-2 rounded-xl">
-              <School size={20} />
+        .icon-box::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: currentColor;
+            opacity: 0.12;
+            border-radius: inherit;
+        }
+
+        .section-title-line {
+            height: 4px;
+            width: 24px;
+            background: #2563eb;
+            border-radius: 10px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 0px; }
+    </style>
+</head>
+<body class="antialiased text-slate-900">
+
+    <!-- Top Navigation Bar -->
+    <nav class="glass-nav sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-11 h-11 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-200">
+                <i data-lucide="school" width="24" height="24"></i>
             </div>
             <div>
-              <h1 className="text-xl font-black tracking-tighter text-blue-800">viv08</h1>
-              <p className="text-[9px] font-bold text-slate-400 uppercase leading-none">TH Trưng Vương • Đắk Lắk 2026</p>
+                <h1 class="text-xl font-extrabold tracking-tight text-slate-900 leading-none">Quản lý chuyên môn</h1>
+                <p class="text-[9px] font-black text-blue-600/60 uppercase tracking-[0.2em] mt-1">Tiểu học Trưng Vương • Đắk Lắk</p>
             </div>
-          </div>
-          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-            <LayoutGrid size={18} />
-          </div>
         </div>
-      </header>
+        <button class="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
+            <i data-lucide="bell" width="20" height="20"></i>
+        </button>
+    </nav>
 
-      {/* Hero Banner Gọn gàng */}
-      <div className="max-w-xl mx-auto px-6 pt-6">
-        <div className="bg-gradient-to-br from-blue-700 to-blue-900 rounded-[32px] p-6 text-white shadow-xl shadow-blue-100">
-          <p className="text-blue-200 text-[10px] font-bold uppercase tracking-widest mb-1">Cổng thông tin chuyên môn</p>
-          <h2 className="text-2xl font-extrabold leading-tight mb-4">Chào mừng giáo viên<br/>Trường Trưng Vương</h2>
-          <div className="flex gap-4">
-             <div className="flex-1 bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-                <p className="text-[10px] opacity-70">Năm học</p>
-                <p className="text-sm font-bold">2025 - 2026</p>
-             </div>
-             <div className="flex-1 bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-                <p className="text-[10px] opacity-70">Phường</p>
-                <p className="text-sm font-bold">Tuy Hòa</p>
-             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Grid Content */}
-      <main className="max-w-xl mx-auto px-6 mt-8 space-y-8">
-        {sections.map((section, idx) => (
-          <div key={idx} className="space-y-4">
-            <div className="flex items-center gap-2 ml-1">
-              <div className="w-1 h-4 bg-blue-600 rounded-full"></div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">
-                {section.title}
-              </h3>
+    <main class="max-w-xl mx-auto p-6 space-y-12">
+        
+        <!-- Welcome Banner -->
+        <section class="relative bg-slate-900 rounded-[35px] p-8 overflow-hidden shadow-2xl">
+            <div class="relative z-10">
+                <span class="text-blue-400 text-[10px] font-bold uppercase tracking-widest">Nghiệp vụ 2026</span>
+                <h2 class="text-white text-2xl font-bold mt-2 leading-tight">Chào buổi sáng,<br/>Thầy/Cô giáo</h2>
+                <div class="mt-6 flex items-center gap-4">
+                    <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 text-white text-[11px] font-semibold">
+                        📍 Phường Tuy Hòa
+                    </div>
+                </div>
             </div>
+            <!-- Decorative circles -->
+            <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-blue-600 rounded-full blur-[60px] opacity-40"></div>
+            <div class="absolute -left-10 -top-10 w-32 h-32 bg-indigo-500 rounded-full blur-[50px] opacity-20"></div>
+        </section>
 
-            <div className="grid grid-cols-2 gap-4">
-              {section.items.map((item, i) => (
-                <a 
-                  key={i} 
-                  href={item.url}
-                  className="bg-white p-4 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-md active:scale-95 transition-all flex flex-col gap-3 group"
-                >
-                  <div className={`${item.color} w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-inherit/20`}>
-                    {item.icon}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-bold text-slate-700 tracking-tight leading-tight">
-                      {item.label}
-                    </span>
-                    <ChevronRight size={14} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
-                  </div>
+        <!-- Section 1: Nghiệp vụ Chuyên môn -->
+        <section class="space-y-6">
+            <div class="flex items-center justify-between px-1">
+                <div class="flex items-center gap-3">
+                    <div class="section-title-line"></div>
+                    <h2 class="text-[12px] font-black uppercase tracking-[0.15em] text-slate-400">Nghiệp vụ Chuyên môn</h2>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-5">
+                <!-- Nộp KHBD -->
+                <a href="https://sites.google.com/view/chuyenmonthtv/nopkhbd" class="feature-card bg-white p-6 rounded-[35px] shadow-sm flex flex-col gap-5 group">
+                    <div class="icon-box text-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center">
+                        <i data-lucide="cloud-upload" width="24" height="24"></i>
+                    </div>
+                    <div>
+                        <p class="text-[14px] font-bold text-slate-800 leading-tight">Nộp KHBD</p>
+                        <p class="text-[10px] text-slate-400 mt-1 font-medium">Cập nhật hồ sơ số</p>
+                    </div>
                 </a>
-              ))}
-            </div>
-          </div>
-        ))}
-      </main>
 
-      {/* Footer / Info */}
-      <footer className="max-w-xl mx-auto px-10 mt-12 text-center">
-        <div className="py-6 border-t border-slate-200">
-          <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">Hệ thống vận hành bởi viv08 • 2026</p>
-          <p className="text-[9px] text-slate-300 mt-1 italic">Hồ sơ pháp lý chuyên môn theo quy định Phòng VHXH</p>
+                <!-- Phê duyệt xanh -->
+                <a href="https://sites.google.com/view/chuyenmonthtv/pheduyet" class="feature-card bg-white p-6 rounded-[35px] shadow-sm flex flex-col gap-5 group">
+                    <div class="icon-box text-emerald-600 w-12 h-12 rounded-2xl flex items-center justify-center">
+                        <i data-lucide="check-circle-2" width="24" height="24"></i>
+                    </div>
+                    <div>
+                        <p class="text-[14px] font-bold text-slate-800 leading-tight">Phê duyệt</p>
+                        <p class="text-[10px] text-slate-400 mt-1 font-medium">Trạng thái hồ sơ</p>
+                    </div>
+                </a>
+
+                <!-- Kho bồi dưỡng -->
+                <a href="https://sites.google.com/view/chuyenmonthtv/khoboiduong" class="feature-card bg-white p-6 rounded-[35px] shadow-sm flex flex-col gap-5 group">
+                    <div class="icon-box text-orange-500 w-12 h-12 rounded-2xl flex items-center justify-center">
+                        <i data-lucide="briefcase" width="24" height="24"></i>
+                    </div>
+                    <div>
+                        <p class="text-[14px] font-bold text-slate-800 leading-tight">Bồi dưỡng</p>
+                        <p class="text-[10px] text-slate-400 mt-1 font-medium">Nâng cao nghiệp vụ</p>
+                    </div>
+                </a>
+
+                <!-- Quản lý KPI -->
+                <a href="https://sites.google.com/view/chuyenmonthtv/quanlykp" class="feature-card bg-white p-6 rounded-[35px] shadow-sm flex flex-col gap-5 group">
+                    <div class="icon-box text-purple-600 w-12 h-12 rounded-2xl flex items-center justify-center">
+                        <i data-lucide="pie-chart" width="24" height="24"></i>
+                    </div>
+                    <div>
+                        <p class="text-[14px] font-bold text-slate-800 leading-tight">Quản lý KPI</p>
+                        <p class="text-[10px] text-slate-400 mt-1 font-medium">Đánh giá hiệu quả</p>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <!-- Section 2: Thư viện số -->
+        <section class="space-y-6">
+            <div class="flex items-center gap-3 px-1">
+                <div class="section-title-line bg-indigo-500"></div>
+                <h2 class="text-[12px] font-black uppercase tracking-[0.15em] text-slate-400">Thư viện số</h2>
+            </div>
+            <div class="grid grid-cols-2 gap-5">
+                <a href="https://sites.google.com/view/chuyenmonthtv/trochoi" class="feature-card bg-white p-6 rounded-[35px] shadow-sm flex flex-col gap-5 group">
+                    <div class="icon-box text-indigo-600 w-12 h-12 rounded-2xl flex items-center justify-center">
+                        <i data-lucide="puzzle" width="24" height="24"></i>
+                    </div>
+                    <p class="text-[14px] font-bold text-slate-800 leading-tight">Trò chơi học tập</p>
+                </a>
+                <a href="https://sites.google.com/view/chuyenmonthtv/flashcard" class="feature-card bg-white p-6 rounded-[35px] shadow-sm flex flex-col gap-5 group">
+                    <div class="icon-box text-sky-500 w-12 h-12 rounded-2xl flex items-center justify-center">
+                        <i data-lucide="book-open" width="24" height="24"></i>
+                    </div>
+                    <p class="text-[14px] font-bold text-slate-800 leading-tight">Học liệu số</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- Section 3: Hệ thống nội bộ -->
+        <section class="space-y-6">
+            <div class="flex items-center gap-3 px-1">
+                <div class="section-title-line bg-rose-500"></div>
+                <h2 class="text-[12px] font-black uppercase tracking-[0.15em] text-slate-400">Hệ thống nội bộ</h2>
+            </div>
+            <div class="space-y-4">
+                <a href="https://drive.google.com/drive/folders/1IPwHp-9h767yU0WGdnSTJUoy7bZxcEJ3" class="feature-card bg-white p-5 rounded-[30px] shadow-sm flex items-center justify-between group">
+                    <div class="flex items-center gap-4">
+                        <div class="icon-box text-rose-600 w-12 h-12 rounded-2xl flex items-center justify-center">
+                            <i data-lucide="database" width="22" height="22"></i>
+                        </div>
+                        <div>
+                            <p class="text-[15px] font-extrabold text-slate-800">Kho Hồ sơ lưu trữ</p>
+                            <p class="text-[10px] text-slate-400 font-medium">Đồng bộ Google Drive</p>
+                        </div>
+                    </div>
+                    <div class="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 group-hover:text-rose-600 transition-colors">
+                        <i data-lucide="arrow-right" width="18"></i>
+                    </div>
+                </a>
+
+                <a href="https://docs.google.com/spreadsheets/d/1ifmIOG0ElzI4xrGT1PKU8VF17FqpZ887xYhBweNhPlk/edit" class="feature-card bg-white p-5 rounded-[30px] shadow-sm flex items-center justify-between group">
+                    <div class="flex items-center gap-4">
+                        <div class="icon-box text-amber-500 w-12 h-12 rounded-2xl flex items-center justify-center">
+                            <i data-lucide="user-check" width="22" height="22"></i>
+                        </div>
+                        <div>
+                            <p class="text-[15px] font-extrabold text-slate-800">CBQL Phê duyệt</p>
+                            <p class="text-[10px] text-slate-400 font-medium">Bảng theo dõi tiến độ</p>
+                        </div>
+                    </div>
+                    <div class="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 group-hover:text-amber-500 transition-colors">
+                        <i data-lucide="arrow-right" width="18"></i>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center py-16 px-10">
+        <div class="max-w-xs mx-auto space-y-4">
+            <div class="flex justify-center gap-1">
+                <div class="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+                <div class="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+                <div class="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+            </div>
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">viv08 Platform</p>
+            <p class="text-[10px] text-slate-300 font-medium leading-relaxed uppercase">Vận hành theo tiêu chuẩn Phòng VHXH Đắk Lắk 2026</p>
         </div>
-      </footer>
-    </div>
-  );
-}
+    </footer>
+
+    <script>
+        // Khởi tạo icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
