@@ -4,6 +4,9 @@ import { useState } from "react";
 import { getCurrentUser } from "@/lib/auth";
 import { menuByRole } from "@/lib/roles";
 export default function Dashboard() {
+
+  const user = getCurrentUser();
+  const menus = menuByRole[user.role];
   const [openMenu, setOpenMenu] = useState(false);
 
   return (
