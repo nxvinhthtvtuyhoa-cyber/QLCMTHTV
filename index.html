@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>viv08 - Chuyên môn TH Trưng Vương</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+    <!-- App Shell -->
+    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col relative bg-white shadow-2xl">
+        
+        <!-- Top Header -->
+        <header class="bg-blue-700 text-white p-6 pb-12 rounded-b-[40px] shadow-lg">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-3xl font-black tracking-tighter">viv08</h1>
+                    <p class="text-[10px] font-bold opacity-80 uppercase mt-1">TH Trưng Vương • Đắk Lắk 2026</p>
+                </div>
+                <div class="bg-white/20 p-2 rounded-2xl">
+                    <i data-lucide="school" class="w-6 h-6"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Quick Access Drive -->
+        <div class="px-6 -mt-8">
+            <a href="https://drive.google.com/drive/folders/1IPwHp-9h767yU0WGdnSTJUoy7bZxcEJ3" target="_blank" 
+               class="flex items-center justify-between p-5 bg-emerald-600 text-white rounded-3xl shadow-xl shadow-emerald-100 active:scale-95 transition-transform">
+                <div class="flex items-center gap-4">
+                    <div class="bg-white/20 p-3 rounded-2xl">
+                        <i data-lucide="folder-kanban" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium opacity-80">Google Drive</p>
+                        <p class="text-lg font-extrabold">Kho Hồ Sơ Trường</p>
+                    </div>
+                </div>
+                <i data-lucide="chevron-right"></i>
+            </a>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex gap-2 overflow-x-auto px-6 py-6 no-scrollbar">
+            <button onclick="setTab('school')" id="tab-school" class="tab-btn px-6 py-3 rounded-2xl text-xs font-extrabold transition-all whitespace-nowrap bg-blue-600 text-white shadow-md shadow-blue-100">NHÀ TRƯỜNG</button>
+            <button onclick="setTab('expert')" id="tab-expert" class="tab-btn px-6 py-3 rounded-2xl text-xs font-extrabold transition-all whitespace-nowrap bg-slate-100 text-slate-500">CHUYÊN MÔN</button>
+            <button onclick="setTab('teams')" id="tab-teams" class="tab-btn px-6 py-3 rounded-2xl text-xs font-extrabold transition-all whitespace-nowrap bg-slate-100 text-slate-500">TỔ CM</button>
+            <button onclick="setTab('library')" id="tab-library" class="tab-btn px-6 py-3 rounded-2xl text-xs font-extrabold transition-all whitespace-nowrap bg-slate-100 text-slate-500">THƯ VIỆN</button>
+        </div>
+
+        <!-- Content Area -->
+        <div class="flex-1 px-6 pb-32">
+            <div id="loading" class="flex flex-col items-center py-20 text-slate-300">
+                <div class="animate-spin mb-4"><i data-lucide="loader-2" class="w-8 h-8"></i></div>
+                <p class="text-xs font-bold uppercase tracking-widest">Đang tải dữ liệu...</p>
+            </div>
+            <div id="docs-list" class="space-y-4 hidden">
+                <!-- Records will be injected here -->
+            </div>
+        </div>
+
+        <!-- Floating Action Button -->
+        <button onclick="toggleModal(true)" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-blue-700 text-white px-8 py-4 rounded-full shadow-2xl shadow-blue-200 flex items-center gap-3 font-extrabold text-sm active:scale-90 transition-transform z-30">
+            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+            THÊM HỒ SƠ MỚI
+        </button>
+
+    </div>
+
+    <!-- Modal Form -->
+    <div id="modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-end sm:items-center justify-center p-4 z-50">
+        <div class="bg-white w-full max-w-sm rounded-[40px] overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-300">
+            <div class="p-8 pb-4">
+                <h3 class="text-2xl font-black text-slate-800 mb-2">Cập nhật viv08</h3>
+                <p class="text-xs text-slate-400 font-bold uppercase">Hệ thống chuyên môn số</p>
+            </div>
+            <div class="p-8 pt-0 space-y-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-blue-700 ml-1">TÊN HỒ SƠ / GIÁO ÁN</label>
+                    <input id="docTitle" type="text" placeholder="VD: Kế hoạch dạy học tuần 20" class="w-full p-4 bg-slate-50 border-2 border-slate-50 rounded-2xl outline-none focus:border-blue-200 transition-all font-semibold">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-blue-700 ml-1">LINK GOOGLE DRIVE</label>
+                    <input id="docLink" type="text" placeholder="Dán link vào đây..." class="w-full p-4 bg-slate-50 border-2 border-slate-50 rounded-2xl outline-none focus:border-blue-200 transition-all font-semibold">
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button onclick="toggleModal(false)" class="flex-1 py-4 font-bold text-slate-400 hover:bg-slate-50 rounded-2xl transition-colors">ĐÓNG</button>
+                    <button onclick="addDocument()" class="flex-1 py-4 bg-blue-700 text-white rounded-3xl font-extrabold shadow-lg shadow-blue-100">LƯU LÊN MÂY</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        // CẤU HÌNH CỦA BẠN ĐÃ ĐƯỢC DÁN VÀO ĐÂY
+        const firebaseConfig = {
+            apiKey: "AIzaSyAVz5ZmtTT7ogI0U_QvhRGmiiuDg6k7y-8",
+            authDomain: "qlcmthtv.firebaseapp.com",
+            projectId: "qlcmthtv",
+            storageBucket: "qlcmthtv.firebasestorage.app",
+            messagingSenderId: "558958506504",
+            appId: "1:558958506504:web:17286833a6666d280717bd",
+            measurementId: "G-Y15TJ656NG"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        window.activeTab = 'school';
+        window.docs = [];
+
+        // Auth & Sync
+        signInAnonymously(auth).then(() => {
+            const colRef = collection(db, "viv08_records");
+            const q = query(colRef, orderBy("createdAt", "desc"));
+            onSnapshot(q, (snapshot) => {
+                window.docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('docs-list').classList.remove('hidden');
+                renderDocs();
+            });
+        });
+
+        window.setTab = (tab) => {
+            window.activeTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = 'tab-btn px-6 py-3 rounded-2xl text-xs font-extrabold transition-all whitespace-nowrap bg-slate-100 text-slate-500';
+            });
+            const activeBtn = document.getElementById('tab-' + tab);
+            activeBtn.className = 'tab-btn px-6 py-3 rounded-2xl text-xs font-extrabold transition-all whitespace-nowrap bg-blue-600 text-white shadow-md shadow-blue-100';
+            renderDocs();
+        };
+
+        window.addDocument = async () => {
+            const title = document.getElementById('docTitle').value;
+            const link = document.getElementById('docLink').value;
+            if(!title || !link) return;
+
+            try {
+                await addDoc(collection(db, "viv08_records"), {
+                    title,
+                    link,
+                    category: window.activeTab,
+                    createdAt: serverTimestamp()
+                });
+                document.getElementById('docTitle').value = '';
+                document.getElementById('docLink').value = '';
+                toggleModal(false);
+            } catch (e) {
+                console.error("Lỗi: ", e);
+            }
+        };
+
+        function renderDocs() {
+            const container = document.getElementById('docs-list');
+            const filtered = window.docs.filter(d => d.category === window.activeTab);
+            
+            if(filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-20 bg-slate-50 rounded-[40px] border-2 border-dashed border-slate-100">
+                        <p class="text-xs font-black text-slate-300 uppercase tracking-widest">Trống</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(d => `
+                <div class="bg-white p-5 rounded-[30px] border border-slate-100 flex items-center justify-between group active:bg-slate-50 transition-colors shadow-sm">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                            <i data-lucide="file-text"></i>
+                        </div>
+                        <div>
+                            <p class="font-extrabold text-slate-800 leading-tight">${d.title}</p>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase mt-1">Phòng VHXH • 2026</p>
+                        </div>
+                    </div>
+                    <a href="${d.link}" target="_blank" class="w-10 h-10 bg-slate-50 flex items-center justify-center rounded-full text-slate-400">
+                        <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+                    </a>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        window.toggleModal = (show) => {
+            document.getElementById('modal').style.display = show ? 'flex' : 'none';
+        };
+
+        window.onload = () => lucide.createIcons();
+    </script>
+</body>
+</html>
