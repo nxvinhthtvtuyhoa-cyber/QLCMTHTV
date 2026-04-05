@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-
+import { getCurrentUser } from "@/lib/auth";
+import { menuByRole } from "@/lib/roles";
 export default function Dashboard() {
   const [openMenu, setOpenMenu] = useState(false);
 
